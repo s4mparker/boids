@@ -1,0 +1,7 @@
+
+# Packaging
+__all__ = ['SIZE', 'BACKGROUND', 'SENSITIVITY']
+
+SIZE = 400
+BACKGROUND = 0, 0, 0
+SENSITIVITY = 0.1
