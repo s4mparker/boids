@@ -2,8 +2,52 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+from . import SIZE, X_SENSITIVITY, Y_SENSITIVITY, Vector2D, Point2D
+
 # Packaging
-__all__ = []
+__all__ = ['calculate_repulsion']
+
+def calculate_repulsion(point):
+    x, y = point.x, point.y
+
+    xv = Vector2D(0, 0)
+    yv = Vector2D(0, 0)
+
+    X_CUTOFF = SIZE * X_SENSITIVITY
+    Y_CUTOFF = SIZE * Y_SENSITIVITY
+
+    if x < X_CUTOFF or x > SIZE - X_CUTOFF or y < Y_CUTOFF or y > SIZE - Y_CUTOFF:
+        centre = Point2D(SIZE / 2, SIZE / 2)
+        return point - centre
+
+
+
+        raw_points = [(X_CUTOFF, Y_CUTOFF), (X_CUTOFF, SIZE - Y_CUTOFF), (SIZE - X_CUTOFF, Y_CUTOFF), (SIZE - X_CUTOFF, SIZE - Y_CUTOFF)]
+        vectors = [point - Point2D(x, y) for (x, y) in raw_points]
+
+        min = vectors[0]
+        for vector in vectors[1:]:
+            if vector.magnitude < min.magnitude:
+                min = vector
+        return min
+    else:
+        return None
+
+
+    if x < X_CUTOFF:
+        xv = point - Point2D(X_CUTOFF, y)
+    elif x > SIZE - X_CUTOFF:
+        xv = point - Point2D(SIZE - X_CUTOFF, y)
+    if y < Y_CUTOFF:
+        yv = point - Point2D(x, Y_CUTOFF)
+    elif y > SIZE - Y_CUTOFF:
+        yv = point - Point2D(x, SIZE - Y_CUTOFF)
+    
+    v = xv + yv
+    return v.unit
+
+
+
 
 def calculate_repel_force(point, sensitivity):
     x, y   = point
@@ -54,30 +98,30 @@ def calculate_direction(point, sensitivity):
 
     return None if len(dirs) < 1 else np.average(dirs)
 
-fig, ax = plt.subplots(nrows=2, figsize=(4, 8))
-ax = ax.flatten()
+# fig, ax = plt.subplots(nrows=2, figsize=(4, 8))
+# ax = ax.flatten()
 
-size = 100
+# size = 100
 
-x = np.array(range(size+1))
-y = np.array(range(size+1))
+# x = np.array(range(size+1))
+# y = np.array(range(size+1))
 
-m = np.empty((size+1, size+1))
-d = np.empty((size+1, size+1))
+# m = np.empty((size+1, size+1))
+# d = np.empty((size+1, size+1))
 
-for a in x:
-    for b in y:
-        m[b][a] = calculate_magnitude((a / size, b / size), 0.25)
-        d[b][a] = calculate_direction((a / size, b / size), 0.25)
+# for a in x:
+#     for b in y:
+#         m[b][a] = calculate_magnitude((a / size, b / size), 0.25)
+#         d[b][a] = calculate_direction((a / size, b / size), 0.25)
 
-ax[0].set_title('Magnitudes')
-ax[1].set_title('Direction')
+# ax[0].set_title('Magnitudes')
+# ax[1].set_title('Direction')
 
-# ax[0].scatter(x=x_vals, y=y_vals, c=magnitudes, s=1)
-ax[0].pcolormesh(m, shading='flat')
-ax[1].pcolormesh(d, shading='flat')
+# # ax[0].scatter(x=x_vals, y=y_vals, c=magnitudes, s=1)
+# ax[0].pcolormesh(m, shading='flat')
+# ax[1].pcolormesh(d, shading='flat')
 
-plt.show()
+# plt.show()
     
 
     

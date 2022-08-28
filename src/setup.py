@@ -1,9 +1,9 @@
 import pygame
 
-from . import Window, BoidScene
+from . import Simulation
 
 # PyGame
 pygame.init()
 
-window = Window(scene=BoidScene)
+Simulation.Run()
 

@@ -1,7 +1,7 @@
-import math
+import math, random
 
 # Packaging
-__all__ = []
+__all__ = ['Vector2D', 'Point2D']
 
 class Vector2D:
 
@@ -14,7 +14,7 @@ class Vector2D:
 
     @property
     def bearing(self):
-        return math.atan2(self.x, self.y) * 180 / math.pi
+        return math.atan2(self.x, self.y) * 180 / math.pi + 180
 
     @property
     def magnitude(self):
@@ -23,13 +23,16 @@ class Vector2D:
     @property
     def unit(self):
         m = self.magnitude
-        return Vector2D(self.x / m, self.y / m)
+        if m == 0 : return Vector2D(0, 0)
+        else: return Vector2D(self.x / m, self.y / m)
 
     def __add__(self, operand):
         if type(operand) is Point2D:
             raise TypeError('vector + point is an invalid operation')
         elif type(operand) is Vector2D:
             return Vector2D(self.x + operand.x, self.y + operand.y)
+        elif type(operand) in [int, float]:
+            return Vector2D(self.x + operand, self.y + operand)
         else:
             raise TypeError('unexpected operand')
 
@@ -38,13 +41,44 @@ class Vector2D:
             raise TypeError('vector - point is an invalid operation')
         elif type(operand) is Vector2D:
             return Vector2D(self.x - operand.x, self.y - operand.y)
+        elif type(operand) in [int, float]:
+            return Vector2D(self.x - operand, self.y - operand)
         else:
             raise TypeError('unexpected operand')
 
-    def __matmul__(self, operand):
+    def __mul__(self, operand):
         if type(operand) is Vector2D:
             return math.acos((self.x * operand.x + self.y * operand.y) / (self.magnitude * operand.magnitude)) * 180 / math.pi
+        elif type(operand) in [int, float]:
+            return Vector2D(self.x * operand, self.y * operand)
+        else:
+            raise TypeError('unexpected operand')
+
+    def __truediv__(self, operand):
+        if type(operand) in [int, float]:
+            if operand == 0:
+                raise ZeroDivisionError('cannot divide by 0')
+            return Vector2D(self.x / operand, self.y / operand)
+        else:
+            raise TypeError('unexpected operand')
+
+    @classmethod
+    def random(cls, w, h):
+        return cls(random.randint(0, w) - w / 2, random.randint(0, h) - h / 2)
+
+    @classmethod
+    def interpolate(cls, vectors, weights=None):
+        if weights is None:
+            weights = [[1 / len(vectors)] * len(vectors)]
         
+        x = 0
+        y = 0
+        for (vector, weight) in zip(vectors, weights):
+            x += vector.x * weight
+            y += vector.y * weight
+        
+        return Vector2D(x, y)
+
 class Point2D:
 
     def __init__(self, x, y):
@@ -69,6 +103,10 @@ class Point2D:
             return Point2D(self.x - operand.x, self.y - operand.y)
         else:
             raise TypeError('unexpected operand')
+
+    @classmethod
+    def random(cls, w, h):
+        return cls(random.randint(0, w), random.randint(0, h))
         
 if __name__ == '__main__':
     p1 = Point2D(1, 1)
