@@ -1,4 +1,4 @@
-import math, random
+import math, random, functools
 
 # Packaging
 __all__ = ['Vector2D', 'Point2D']
@@ -10,15 +10,19 @@ class Vector2D:
         self.y = y
 
     def __str__(self):
-        return f'Vector2D ({self.x}, {self.y}, {self.bearing})'
+        return f'Vector2D ({self.x}, {self.y}, {self.angle})'
 
     @property
-    def bearing(self):
+    def angle(self):
         return math.atan2(self.x, self.y) * 180 / math.pi + 180
 
     @property
     def magnitude(self):
-        return math.sqrt(self.x**2 + self.y**2)
+        try:
+            return math.sqrt(self.x**2 + self.y**2)
+        except OverflowError as e:
+            print(f'{self.x}, {self.y}')
+            raise e
 
     @property
     def unit(self):
@@ -62,22 +66,27 @@ class Vector2D:
         else:
             raise TypeError('unexpected operand')
 
+    def rotate(self, angle):
+        radians = angle * math.pi / 180
+        x_component  = math.cos(radians) * self.x - math.sin(radians) * self.y
+        y_component = math.sin(radians) * self.x + math.cos(radians) * self.y
+        self.x = x_component
+        self.y = y_component
+
     @classmethod
     def random(cls, w, h):
         return cls(random.randint(0, w) - w / 2, random.randint(0, h) - h / 2)
 
     @classmethod
-    def interpolate(cls, vectors, weights=None):
-        if weights is None:
-            weights = [[1 / len(vectors)] * len(vectors)]
-        
-        x = 0
-        y = 0
-        for (vector, weight) in zip(vectors, weights):
-            x += vector.x * weight
-            y += vector.y * weight
-        
-        return Vector2D(x, y)
+    def average(cls, *args):
+        if any([type(arg) is not Vector2D for arg in args]):
+            raise TypeError('expected Vector2Ds')
+        elif len(args) == 0:
+            raise ValueError('expected at least one Vector2D')
+        elif len(args) == 1:
+            return args[0]
+        else:
+            return functools.reduce(lambda a, b: a+b, list(args))
 
 class Point2D:
 
@@ -107,6 +116,22 @@ class Point2D:
     @classmethod
     def random(cls, w, h):
         return cls(random.randint(0, w), random.randint(0, h))
+
+    @classmethod
+    def average(cls, *args):
+        if any([type(arg) is not Point2D for arg in args]):
+            raise TypeError('expected Point2Ds')
+        elif len(args) == 0:
+            raise ValueError('expected at least one Point2D')
+        elif len(args) == 1:
+            return args[0]
+        else:
+            x = 0
+            y = 0
+            for point in args:
+                x += point.x
+                y += point.y
+            return Point2D(x, y)
         
 if __name__ == '__main__':
     p1 = Point2D(1, 1)

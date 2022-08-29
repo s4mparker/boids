@@ -19,17 +19,6 @@ def calculate_repulsion(point):
     if x < X_CUTOFF or x > SIZE - X_CUTOFF or y < Y_CUTOFF or y > SIZE - Y_CUTOFF:
         centre = Point2D(SIZE / 2, SIZE / 2)
         return point - centre
-
-
-
-        raw_points = [(X_CUTOFF, Y_CUTOFF), (X_CUTOFF, SIZE - Y_CUTOFF), (SIZE - X_CUTOFF, Y_CUTOFF), (SIZE - X_CUTOFF, SIZE - Y_CUTOFF)]
-        vectors = [point - Point2D(x, y) for (x, y) in raw_points]
-
-        min = vectors[0]
-        for vector in vectors[1:]:
-            if vector.magnitude < min.magnitude:
-                min = vector
-        return min
     else:
         return None
 

@@ -10,17 +10,16 @@ class Simulation:
     @classmethod
     def Run(cls):
         screen = pygame.display.set_mode(size=(SIZE, SIZE))
-        agents = {Agent(environment=screen) for i in range(2)}
-        print(f'All: {agents}')
-        for agent in agents:
-            agent.addNeighbours(*(agents - {agent}))
-            print(agent)
+
+        agents = pygame.sprite.Group([Agent() for i in range(5)])
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
+
             screen.fill(BLACK)
-            {agent.update() for agent in agents}
-            {agent.draw()   for agent in agents}
+            agents.update()
+            agents.draw(screen)
             pygame.display.flip()
+            pygame.event.wait(2)
 
