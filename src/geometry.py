@@ -1,4 +1,4 @@
-import math, random, functools
+import math, random
 from math import sin, cos, atan2
 
 # Packaging
@@ -52,31 +52,11 @@ class Vector2D:
         else:
             raise TypeError('unexpected operand')
 
-    def __xor__(self, operand):
-        if type(operand) is Vector2D:
-            return math.atan2(
-                operand.x * self.y - operand.y * self.x, 
-                operand.x * self.x + operand.y * self.y
-            ) * 180 / math.pi
-        else:
-            raise TypeError('unexpected operand')
-
-    def __and__(self, operand):
-        if type(operand) in [int, float]:
-            r = -operand * math.pi / 180
-            print(r)
-            return Vector2D(
-                cos(r) * self.x - sin(r) * self.y,
-                sin(r) * self.x + cos(r) * self.y
-            )
-        else:
-            raise TypeError('unexpected operand')
-
     # --- Properties ---------------------------------------------------------
 
     @property
     def angle(self):
-        return Vector2D(0, 1) ^ self
+        return self.get_angle_between_vectors(Vector2D(0, 1), self)
 
     @property
     def magnitude(self):
@@ -96,6 +76,26 @@ class Vector2D:
     @classmethod
     def random(cls, d1, d2):
         return cls(random.randint(0, d1), random.randint(0, d2))
+
+    # --- Static Methods -----------------------------------------------------
+
+    @staticmethod
+    def rotate_vector(vector, angle):
+        r = -angle * math.pi / 180
+        return Vector2D(
+            cos(r) * vector.x - sin(r) * vector.y,
+            sin(r) * vector.x + cos(r) * vector.y
+        )
+
+    @staticmethod
+    def get_angle_between_vectors(vector1, vector2):
+        if type(vector1) is Vector2D and type(vector2) is Vector2D:
+            return math.atan2(
+                vector2.x * vector1.y - vector2.y * vector1.x, 
+                vector2.x * vector1.x + vector2.y * vector1.y
+            ) * 180 / math.pi
+        else:
+            raise TypeError('unexpected operand')
 
 class Point2D:
 
@@ -129,42 +129,19 @@ class Point2D:
     @classmethod
     def random(cls, d1, d2):
         return cls(random.randint(0, d1), random.randint(0, d2))
-        
-if False and __name__ == '__main__':
-    p1 = Point2D(1, 1)
-    print(p1)
 
-    p2 = Point2D(2, 2)
-    print(p2)
+    # --- Static Methods -----------------------------------------------------
 
-    v1 = p2 - p1
-    print(v1)
-
-    p3 = p2 - v1
-    print(p3)
-
-    p4 = p1 + v1
-    print(p4)
-
-    v2 = Vector2D(2, 2) + v1
-    print(v2)
-
-    v3 = Vector2D(4, 4) - v1
-    print(v3)
-
-    v4 = Vector2D(1, 2) + Vector2D(2, 1)
-    print(v4)
-
-    v5 = v4 - Vector2D(5, 5)
-    print(v5)
-
-    u1 = Vector2D(10, 0).unit
-    print(u1)
-    print(u1.magnitude)
-
-    v6 = Vector2D(0, 1)
-    v7 = Vector2D(1, 1)
-    print(v6 @ v7)
+    @staticmethod
+    def get_average_point(*points):
+        if any([type(point) is not Point2D for point in points]):
+            raise TypeError('unexpected operand')
+        else:
+            avg_x, avg_y = 0, 0
+            for point in points:
+                avg_x += point.x
+                avg_y += point.y
+            return Point2D(avg_x / len(points), avg_y / len(points))
 
 if __name__ == '__main__':
     p1 = Point2D(0, 0)

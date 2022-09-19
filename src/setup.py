@@ -1,9 +1,10 @@
-import pygame
+import json, pygame
 
-from . import Simulation
+# Packaging
+__all__ = ['config']
 
-# PyGame
+# Load the parameters
+config = json.load(open('src/parameters.json'))
+
+# Set up pygame
 pygame.init()
-
-Simulation.Run()
-
