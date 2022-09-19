@@ -1,4 +1,5 @@
 import math, random, functools
+from math import sin, cos, atan2
 
 # Packaging
 __all__ = ['Vector2D', 'Point2D']
@@ -12,23 +13,7 @@ class Vector2D:
     def __str__(self):
         return f'Vector2D ({self.x}, {self.y}, {self.angle})'
 
-    @property
-    def angle(self):
-        return math.atan2(self.x, self.y) * 180 / math.pi + 180
-
-    @property
-    def magnitude(self):
-        try:
-            return math.sqrt(self.x**2 + self.y**2)
-        except OverflowError as e:
-            print(f'{self.x}, {self.y}')
-            raise e
-
-    @property
-    def unit(self):
-        m = self.magnitude
-        if m == 0 : return Vector2D(0, 0)
-        else: return Vector2D(self.x / m, self.y / m)
+    # --- Operators ----------------------------------------------------------
 
     def __add__(self, operand):
         if type(operand) is Point2D:
@@ -52,7 +37,7 @@ class Vector2D:
 
     def __mul__(self, operand):
         if type(operand) is Vector2D:
-            return math.acos((self.x * operand.x + self.y * operand.y) / (self.magnitude * operand.magnitude)) * 180 / math.pi
+            return self.x * operand.x + self.y * operand.y
         elif type(operand) in [int, float]:
             return Vector2D(self.x * operand, self.y * operand)
         else:
@@ -62,31 +47,55 @@ class Vector2D:
         if type(operand) in [int, float]:
             if operand == 0:
                 raise ZeroDivisionError('cannot divide by 0')
-            return Vector2D(self.x / operand, self.y / operand)
+            else:
+                return Vector2D(self.x / operand, self.y / operand)
         else:
             raise TypeError('unexpected operand')
 
-    def rotate(self, angle):
-        radians = angle * math.pi / 180
-        x_component  = math.cos(radians) * self.x - math.sin(radians) * self.y
-        y_component = math.sin(radians) * self.x + math.cos(radians) * self.y
-        self.x = x_component
-        self.y = y_component
-
-    @classmethod
-    def random(cls, w, h):
-        return cls(random.randint(0, w) - w / 2, random.randint(0, h) - h / 2)
-
-    @classmethod
-    def average(cls, *args):
-        if any([type(arg) is not Vector2D for arg in args]):
-            raise TypeError('expected Vector2Ds')
-        elif len(args) == 0:
-            raise ValueError('expected at least one Vector2D')
-        elif len(args) == 1:
-            return args[0]
+    def __xor__(self, operand):
+        if type(operand) is Vector2D:
+            return math.atan2(
+                operand.x * self.y - operand.y * self.x, 
+                operand.x * self.x + operand.y * self.y
+            ) * 180 / math.pi
         else:
-            return functools.reduce(lambda a, b: a+b, list(args))
+            raise TypeError('unexpected operand')
+
+    def __and__(self, operand):
+        if type(operand) in [int, float]:
+            r = -operand * math.pi / 180
+            print(r)
+            return Vector2D(
+                cos(r) * self.x - sin(r) * self.y,
+                sin(r) * self.x + cos(r) * self.y
+            )
+        else:
+            raise TypeError('unexpected operand')
+
+    # --- Properties ---------------------------------------------------------
+
+    @property
+    def angle(self):
+        return Vector2D(0, 1) ^ self
+
+    @property
+    def magnitude(self):
+        if self.x == 0 and self.y == 0:
+            return 0
+        else:
+            return math.sqrt(self.x**2 + self.y**2)
+
+    @property
+    def unit(self):
+        m = self.magnitude
+        if m == 0 : return Vector2D(0, 0)
+        else: return Vector2D(self.x / m, self.y / m)
+
+    # --- Class Methods ------------------------------------------------------
+
+    @classmethod
+    def random(cls, d1, d2):
+        return cls(random.randint(0, d1), random.randint(0, d2))
 
 class Point2D:
 
@@ -96,6 +105,8 @@ class Point2D:
 
     def __str__(self):
         return f'Point2D ({self.x}, {self.y})'
+
+    # --- Operators ----------------------------------------------------------
 
     def __add__(self, operand):
         if type(operand) is Point2D:
@@ -107,33 +118,19 @@ class Point2D:
 
     def __sub__(self, operand):
         if type(operand) is Point2D:
-            return Vector2D(operand.x - self.x, operand.y - self.y)
+            return Vector2D(self.x - operand.x, self.y - operand.y)
         elif type(operand) is Vector2D:
             return Point2D(self.x - operand.x, self.y - operand.y)
         else:
             raise TypeError('unexpected operand')
 
-    @classmethod
-    def random(cls, w, h):
-        return cls(random.randint(0, w), random.randint(0, h))
+    # --- Class Methods ------------------------------------------------------
 
     @classmethod
-    def average(cls, *args):
-        if any([type(arg) is not Point2D for arg in args]):
-            raise TypeError('expected Point2Ds')
-        elif len(args) == 0:
-            raise ValueError('expected at least one Point2D')
-        elif len(args) == 1:
-            return args[0]
-        else:
-            x = 0
-            y = 0
-            for point in args:
-                x += point.x
-                y += point.y
-            return Point2D(x, y)
+    def random(cls, d1, d2):
+        return cls(random.randint(0, d1), random.randint(0, d2))
         
-if __name__ == '__main__':
+if False and __name__ == '__main__':
     p1 = Point2D(1, 1)
     print(p1)
 
@@ -169,4 +166,8 @@ if __name__ == '__main__':
     v7 = Vector2D(1, 1)
     print(v6 @ v7)
 
+if __name__ == '__main__':
+    p1 = Point2D(0, 0)
+    p2 = Point2D(1, 1)
+    print(p1 - p2)
 
