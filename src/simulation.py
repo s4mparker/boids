@@ -13,11 +13,11 @@ class Simulation:
         environment = pygame.Surface(size=config['ENVSIZE'])
 
         agents = pygame.sprite.Group()
-        for i in range(10):
+        for i in range(config['QUANTITY']):
             agents.add(Agent(
                 x = random.randint(0, config['ENVSIZE'][0]),
                 y = random.randint(0, config['ENVSIZE'][1]),
-                size = 100
+                size = 70
             ))
 
         while True:

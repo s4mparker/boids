@@ -1,4 +1,9 @@
 {
+    "SCREEN": {
+        "X": 400,
+        "Y": 400
+    },
+
     "SCREENSIZE": [
         400,
         400
@@ -7,6 +12,17 @@
         4000,
         4000
     ],
+    "XREPULSION": 0.1,
+    "YREPULSION": 0.1,
+    "QUANTITY": 200,
+    "SPEED": {
+        "MEAN": 1,
+        "STD": 0.05
+    },
+    "TURNING": {
+        "MEAN": 1,
+        "STD": 0.05
+    },
     "BLACK": [
         0,
         0,

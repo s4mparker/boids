@@ -14,8 +14,8 @@ class Agent(pygame.sprite.Sprite):
         self.rotation = Vector2D(0, 1)
         self.speed    = speed
 
-        self.p_radius = 100
-        self.s_radius = 1000
+        self.p_radius = 200
+        self.s_radius = 400
 
         self.sprite = pygame.Surface(size=(size, size))
         self.sprite.fill(config['BLACK'])
@@ -33,10 +33,14 @@ class Agent(pygame.sprite.Sprite):
             elif distance <= self.s_radius:
                 close.add(agent)
 
+        # Repulse - agents too close spread out
+
         repulse = Vector2D(0, 0)
         for agent in too_close:
             v = self.centre - agent.centre
-            repulse = repulse + (v.unit * 0.5)
+            repulse = repulse + v.unit
+
+        # Align - agents try and align their direction towards other nearby agents
 
         align = Vector2D(0, 0)
         if len(close) < 1:
@@ -44,36 +48,27 @@ class Agent(pygame.sprite.Sprite):
             angle = random.randint(-40, 40)
             align = align if chance != 0 else Vector2D.rotate_vector(self.rotation.unit, angle)
         else:
-            sum = Vector2D(0, 0)
             for agent in close:
-                sum = sum + agent.rotation
+                align = align + agent.rotation
 
-            print(type(sum))
-            print(type(self.rotation))
-            # align = 0.5 * sum.unit # + (0.5 * self.rotation.unit)
-            align = sum + self.rotation
+        # Cohesion - agents attempt to steer towards the centre of the group
 
-        centre = Vector2D(0, 0)
+        cohesion = Vector2D(0, 0)
         if len(close) > 0:
-            avg_point = Point2D.get_average_point(*list(close))
-            centre = 0.5 * (avg_point - self.centre)
+            centres = [agent.centre for agent in close]
+            avg_point = Point2D.get_average_point(*centres)
+            cohesion = avg_point - self.centre
 
-        self.rotation = (self.rotation * 0.5 + repulse.unit + align.unit + centre.unit).unit
-        self.centre = self.centre + self.rotation * 10
+        # Wall Repulsion - agents steer away from any nearby walls
 
+        walls = self.calculate_wall_repulsion(self)
 
+        forces = (repulse.unit + align.unit + cohesion.unit).unit
+        self.rotation = (self.rotation * 0.95 + forces * 0.05).unit
+        if walls.magnitude != 0:
+            self.rotation = (self.rotation * 0.95 + walls * 0.05).unit
 
-
-        
-
-        
-
-        # if random.randint(0, 10) == 0:
-        #     angle = random.randint(-10, 10)
-        #     self.rotation = Vector2D.rotate_vector(self.rotation, angle)
-        # self.centre   = self.centre + self.rotation.unit
-
-        # # self.rotation = Vector2D.rotate_vector(self.rotation, 100)
+        self.centre = self.centre + self.rotation * 4
 
     @property
     def x(self):
@@ -98,3 +93,21 @@ class Agent(pygame.sprite.Sprite):
     @staticmethod
     def get_distance_between_agents(agent1, agent2):
         return math.sqrt((agent1.x - agent2.x)**2 + (agent1.y - agent2.y)**2)
+
+    @staticmethod
+    def calculate_wall_repulsion(agent):
+        x, y = agent.x, agent.y
+        ex, ey = config['ENVSIZE'][0], config['ENVSIZE'][1]
+        ec = Point2D(ex / 2, ey / 2)
+        rx, ry = config['XREPULSION'], config['YREPULSION']
+
+        if x < ex * rx:
+            return (ec - agent.centre).unit / (abs(x) / (ex * rx))**2
+        elif x > ex - (ex * rx):
+            return (ec - agent.centre).unit / (abs(ex - x) / (ex * rx))**2
+        elif y < ey * ry:
+            return (ec - agent.centre).unit / (abs(y) / (ey * ry))**2
+        elif y > ey - (ey * ry):
+            return (ec - agent.centre).unit / (abs(ey - y) / (ey * ry))**2
+        else:
+            return Vector2D(0, 0)
