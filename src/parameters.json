@@ -3,39 +3,80 @@
         "X": 400,
         "Y": 400
     },
-
-    "SCREENSIZE": [
-        400,
-        400
-    ],
-    "ENVSIZE": [
-        4000,
-        4000
-    ],
+    "ENVIRONMENT": {
+        "X": 4000,
+        "Y": 4000
+    },
     "XREPULSION": 0.1,
     "YREPULSION": 0.1,
-    "QUANTITY": 200,
-    "SPEED": {
-        "MEAN": 1,
-        "STD": 0.05
+    "COLOURS": {
+        "BLACK": [
+            0,
+            0,
+            0
+        ],
+        "RED": [
+            255,
+            0,
+            0
+        ],
+        "GREEN": [
+            0,
+            255,
+            0
+        ],
+        "BLUE": [
+            0,
+            0,
+            255
+        ]
     },
-    "TURNING": {
-        "MEAN": 1,
-        "STD": 0.05
-    },
-    "BLACK": [
-        0,
-        0,
-        0
-    ],
-    "WHITE": [
-        255,
-        255,
-        255
-    ],
-    "RED": [
-        255,
-        0,
-        0
-    ]
+    "AGENTS": {
+        "BLUE": {
+            "COLOUR": "BLUE",
+            "QUANTITY": 20,
+            "SIZE": 75,
+            "SPEED": {
+                "MEAN": 10,
+                "STD": 0
+            },
+            "TURNING": {
+                "MEAN": 0.08,
+                "STD": 0.002
+            },
+            "FORCE_WEIGHTS": {
+                "REPULSE": {
+                    "LIKE": 0.7,
+                    "UNLIKE": 0
+                },
+                "ALIGN": 1,
+                "COHESION": 0.7
+            },
+            "INNER_RADIUS": 100,
+            "OUTER_RADIUS": 400
+        },
+        "RED": {
+            "COLOUR": "RED",
+            "QUANTITY": 20,
+            "SIZE": 75,
+            "SPEED": {
+                "MEAN": 12,
+                "STD": 0.7
+            },
+            "TURNING": {
+                "MEAN": 0.08,
+                "STD": 0.002
+            },
+            "FORCE_WEIGHTS": {
+                "REPULSE": {
+                    "LIKE": 0.7,
+                    "UNLIKE": 0.8
+                },
+                "ALIGN": 1,
+                "COHESION": 0.7
+            },
+            "INNER_RADIUS": 150,
+            "OUTER_RADIUS": 400
+        }
+    }
 }

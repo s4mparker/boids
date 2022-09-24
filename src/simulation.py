@@ -9,29 +9,32 @@ class Simulation:
 
     @staticmethod
     def Run():
-        screen = pygame.display.set_mode(size=config['SCREENSIZE'])
-        environment = pygame.Surface(size=config['ENVSIZE'])
+        screen_dims      = (config['SCREEN']['X'], config['SCREEN']['Y'])
+        environment_dims = (config['ENVIRONMENT']['X'], config['ENVIRONMENT']['Y'])
 
-        agents = pygame.sprite.Group()
-        for i in range(config['QUANTITY']):
-            agents.add(Agent(
-                x = random.randint(0, config['ENVSIZE'][0]),
-                y = random.randint(0, config['ENVSIZE'][1]),
-                size = 70
-            ))
+        screen = pygame.display.set_mode(size=screen_dims)
+        environment = pygame.Surface(size=environment_dims)
+
+        all_agents = pygame.sprite.Group()
+        for type in [type for type in config['AGENTS'].keys()]:
+            quantity = config['AGENTS'][type]['QUANTITY']
+            for i in range(quantity):
+                agent    = Agent(agent_type=type)
+                all_agents.add(agent)
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
 
-            environment.fill(config['BLACK'])
-            agents.update()
-            agents.draw(environment)
+            environment.fill(config['COLOURS']['BLACK'])
 
-            scaled_environment = pygame.transform.smoothscale(environment, size=config['SCREENSIZE'])
+            all_agents.update()
+            all_agents.draw(environment)
 
-            screen.fill(config['BLACK'])
+            scaled_environment = pygame.transform.smoothscale(environment, size=screen_dims)
+
+            screen.fill(config['COLOURS']['BLACK'])
             screen.blit(scaled_environment, scaled_environment.get_rect())
             pygame.display.flip()
-            pygame.event.wait(2)
+            pygame.event.wait(10)
 

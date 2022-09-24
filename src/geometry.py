@@ -13,6 +13,9 @@ class Vector2D:
     def __str__(self):
         return f'Vector2D ({self.x}, {self.y}, {self.angle})'
 
+    def __bool__(self):
+        return self.magnitude != 0
+
     # --- Operators ----------------------------------------------------------
 
     def __add__(self, operand):

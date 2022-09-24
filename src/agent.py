@@ -1,4 +1,5 @@
 import pygame, random, math, functools
+import numpy as np
 
 from . import Point2D, Vector2D, config
 
@@ -7,68 +8,143 @@ __all__ = ['Agent']
 
 class Agent(pygame.sprite.Sprite):
 
-    def __init__(self, x, y, size, speed=1):
+    agents = set()
+
+    def __init__(self, agent_type):
+
+        # Call the superclass' constructor
         super().__init__()
 
-        self.centre   = Point2D(x, y)
-        self.rotation = Vector2D(0, 1)
-        self.speed    = speed
+        # Set the agent's type
+        self.type = agent_type
+        attributes = config['AGENTS'][agent_type]
 
-        self.p_radius = 200
-        self.s_radius = 400
+        # Add the agent being created to the wider population of agents
+        self.agents.add(self)
 
-        self.sprite = pygame.Surface(size=(size, size))
-        self.sprite.fill(config['BLACK'])
-        self.sprite.set_colorkey(config['BLACK'])
-        pygame.draw.polygon(self.sprite, config['WHITE'], points=[(0, size), (size, size), (int(size * 0.5), 0)])
+        # Generate a random point in the environment
+        self.centre = Point2D(
+            x=np.random.randint(0, config['ENVIRONMENT']['X']),
+            y=np.random.randint(0, config['ENVIRONMENT']['Y']),
+        )
+
+        # Set the agent's direction to (0, 1) aka up
+        self.direction = Vector2D(x=0, y=1)
+
+        # Extract the agent's attributes from the configuration file
+        self.speed = float(max(0, 
+            np.random.normal(
+                loc   = attributes['SPEED']['MEAN'],
+                scale = attributes['SPEED']['STD']
+            )
+        ))
+        self.turning = float(np.clip(
+            np.random.normal(
+                loc   = attributes['TURNING']['MEAN'],
+                scale = attributes['TURNING']['STD']
+            ),
+            a_min=0,
+            a_max=1
+        ))
+        self.force_weights = attributes['FORCE_WEIGHTS']
+        self.outer_radius = attributes['OUTER_RADIUS']
+        self.inner_radius = attributes['INNER_RADIUS']
+
+        # Generate the agent's sprite
+        s = attributes['SIZE']
+        self.sprite = pygame.Surface(size=(s, s))
+        self.sprite.fill(config['COLOURS']['BLACK'])
+        self.sprite.set_colorkey(config['COLOURS']['BLACK'])
+        pygame.draw.polygon(
+            surface=self.sprite,
+            color=config['COLOURS'][attributes['COLOUR']],
+            points=[(0, s), (s, s), (int(s*0.5), 0)]
+        )
 
     def update(self):
-        group = set(self.groups()[0].sprites()) - {self}
-
-        too_close, close = set(), set()
-        for agent in group:
+        
+        # Generate three sets of agents
+        attract_like   = set()
+        repulse_like   = set()
+        repulse_other  = set()
+        for agent in self.agents - {self}:
             distance = self.get_distance_between_agents(self, agent)
-            if distance <= self.p_radius:
-                too_close.add(agent)
-            elif distance <= self.s_radius:
-                close.add(agent)
+            if self.type == agent.type and distance <= self.inner_radius:
+                repulse_like.add(agent)
+            elif self.type == agent.type and distance <= self.outer_radius:
+                attract_like.add(agent)
+            elif self.type != agent.type and distance <= self.outer_radius:
+                repulse_other.add(agent)
 
-        # Repulse - agents too close spread out
+        # Calculate the repulsion forces
+        repulsion_like  = self.calculate_repulsion(repulse_like).unit * self.force_weights['REPULSE']['LIKE']
+        repulsion_other = self.calculate_repulsion(repulse_other).unit * self.force_weights['REPULSE']['UNLIKE']
 
-        repulse = Vector2D(0, 0)
-        for agent in too_close:
-            v = self.centre - agent.centre
-            repulse = repulse + v.unit
+        # Calculate the alignment force
+        alignment = self.calculate_alignment(attract_like).unit * self.force_weights['ALIGN']
 
-        # Align - agents try and align their direction towards other nearby agents
+        # Calculate the cohesion force
+        cohesion = self.calculate_cohesion(attract_like).unit * self.force_weights['COHESION']
 
-        align = Vector2D(0, 0)
-        if len(close) < 1:
-            chance = random.randint(0, 10)
-            angle = random.randint(-40, 40)
-            align = align if chance != 0 else Vector2D.rotate_vector(self.rotation.unit, angle)
+        # Calculate the wall repulsion force
+        walls = self.calculate_wall_repulsion().unit
+
+        # Move the agent's position and rotation
+        total_force = repulsion_like + repulsion_other + alignment + cohesion
+        if total_force:
+            self.direction = total_force.unit * self.turning + self.direction.unit * (1 - self.turning)
+            self.direction = self.direction.unit
+        if walls:
+            self.direction = walls.unit * self.turning + self.direction.unit * (1 - self.turning)
+            self.direction = self.direction.unit
+
+        self.direction = self.direction.unit
+        self.centre = self.centre + self.direction * self.speed
+
+    def calculate_repulsion(self, agents):
+        force = Vector2D(x=0, y=0)
+        for agent in agents:
+            force = force + (self.centre - agent.centre)
+
+        return force
+
+    def calculate_alignment(self, agents):
+        force = Vector2D(x=0, y=0)
+
+        if len(agents) < 1:
+            angle = np.random.choice([0, 1], p=[0.9, 0.1]) * np.random.randint(-40, 41)
+            force = Vector2D.rotate_vector(vector=force, angle=angle)
         else:
-            for agent in close:
-                align = align + agent.rotation
+            for agent in agents : force = force + agent.direction
 
-        # Cohesion - agents attempt to steer towards the centre of the group
+        return force
 
-        cohesion = Vector2D(0, 0)
-        if len(close) > 0:
-            centres = [agent.centre for agent in close]
+    def calculate_cohesion(self, agents):
+        force = Vector2D(x=0, y=0)
+        if len(agents) > 0:
+            centres = [agent.centre for agent in agents]
             avg_point = Point2D.get_average_point(*centres)
-            cohesion = avg_point - self.centre
+            force = avg_point - self.centre
 
-        # Wall Repulsion - agents steer away from any nearby walls
+        return force
 
-        walls = self.calculate_wall_repulsion(self)
+    def calculate_wall_repulsion(self):
+        ex, ey = config['ENVIRONMENT']['X'], config['ENVIRONMENT']['Y'] # environment's dimensions
+        rx, ry = config['XREPULSION'], config['YREPULSION'] # environment's repulsion
+        centre = Point2D(x=int(ex / 2), y=int(ey / 2))
 
-        forces = (repulse.unit + align.unit + cohesion.unit).unit
-        self.rotation = (self.rotation * 0.95 + forces * 0.05).unit
-        if walls.magnitude != 0:
-            self.rotation = (self.rotation * 0.95 + walls * 0.05).unit
+        if self.x < ex * rx:
+            return (centre - self.centre).unit / (abs(self.x) / (ex * rx))**2
+        elif self.x > ex - (ex * rx):
+            return (centre - self.centre).unit / (abs(ex - self.x) / (ex * rx))**2
+        elif self.y < ey * ry:
+            return (centre - self.centre).unit / (abs(self.y) / (ey * ry))**2
+        elif self.y > ey - (ey * ry):
+            return (centre - self.centre).unit / (abs(ey - self.y) / (ey * ry))**2
+        else:
+            return Vector2D(0, 0)
 
-        self.centre = self.centre + self.rotation * 4
+    # ---- Properties -------------------------------------------------------
 
     @property
     def x(self):
@@ -80,34 +156,20 @@ class Agent(pygame.sprite.Sprite):
 
     @property
     def image(self):
-        return pygame.transform.rotate(self.sprite, self.rotation.angle + 180)
+        return pygame.transform.rotate(self.sprite, self.direction.angle + 180)
 
     @property
     def rect(self):
-        c = (int(self.sprite.get_width() / 2), int(self.sprite.get_height() / 2))
-        o_rect = self.sprite.get_rect(center = c)
-        r_rect = self.image.get_rect(center = o_rect.center)
-        r_rect.center = (self.centre.x, self.centre.y)
-        return r_rect
+        centre = (int(self.sprite.get_width() / 2), int(self.sprite.get_height() / 2))
+        original = self.sprite.get_rect(center = centre)
+        rotated = self.image.get_rect(center = original.center)
+        rotated.center = (self.centre.x, self.centre.y)
+        return rotated
+
+    # ---- Class Methods ----------------------------------------------------
+
+    # ---- Static Methods ---------------------------------------------------
 
     @staticmethod
-    def get_distance_between_agents(agent1, agent2):
-        return math.sqrt((agent1.x - agent2.x)**2 + (agent1.y - agent2.y)**2)
-
-    @staticmethod
-    def calculate_wall_repulsion(agent):
-        x, y = agent.x, agent.y
-        ex, ey = config['ENVSIZE'][0], config['ENVSIZE'][1]
-        ec = Point2D(ex / 2, ey / 2)
-        rx, ry = config['XREPULSION'], config['YREPULSION']
-
-        if x < ex * rx:
-            return (ec - agent.centre).unit / (abs(x) / (ex * rx))**2
-        elif x > ex - (ex * rx):
-            return (ec - agent.centre).unit / (abs(ex - x) / (ex * rx))**2
-        elif y < ey * ry:
-            return (ec - agent.centre).unit / (abs(y) / (ey * ry))**2
-        elif y > ey - (ey * ry):
-            return (ec - agent.centre).unit / (abs(ey - y) / (ey * ry))**2
-        else:
-            return Vector2D(0, 0)
+    def get_distance_between_agents(a, b):
+        return np.sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
