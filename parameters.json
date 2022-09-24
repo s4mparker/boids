@@ -1,0 +1,105 @@
+{
+    "SCREEN": {
+        "X": 400,
+        "Y": 400
+    },
+    "ENVIRONMENT": {
+        "X": 4000,
+        "Y": 4000
+    },
+    "XREPULSION": 0.1,
+    "YREPULSION": 0.1,
+    "COLOURS": {
+        "BLACK": [
+            0,
+            0,
+            0
+        ],
+        "RED": [
+            255,
+            0,
+            0
+        ],
+        "GREEN": [
+            0,
+            255,
+            0
+        ],
+        "BLUE": [
+            0,
+            0,
+            255
+        ]
+    },
+    "AGENTS": {
+        "BLUE": {
+            "COLOUR": "BLUE",
+            "QUANTITY": 10,
+            "SIZE": 75,
+            "SPEED": {
+                "MEAN": 3,
+                "STD": 0.05
+            },
+            "TURNING": {
+                "MEAN": 0.01,
+                "STD": 0.0002
+            },
+            "FORCE_WEIGHTS": {
+                "REPULSE": {
+                    "LIKE": 2,
+                    "UNLIKE": 0.2
+                },
+                "ALIGN": 1,
+                "COHESION": 1
+            },
+            "INNER_RADIUS": 300,
+            "OUTER_RADIUS": 1000
+        },
+        "RED": {
+            "COLOUR": "RED",
+            "QUANTITY": 40,
+            "SIZE": 75,
+            "SPEED": {
+                "MEAN": 5.5,
+                "STD": 0.5
+            },
+            "TURNING": {
+                "MEAN": 0.05,
+                "STD": 0.003
+            },
+            "FORCE_WEIGHTS": {
+                "REPULSE": {
+                    "LIKE": 2,
+                    "UNLIKE": 10
+                },
+                "ALIGN": 1,
+                "COHESION": 1
+            },
+            "INNER_RADIUS": 200,
+            "OUTER_RADIUS": 400
+        },
+        "GREEN": {
+            "COLOUR": "GREEN",
+            "QUANTITY": 20,
+            "SIZE": 50,
+            "SPEED": {
+                "MEAN": 8,
+                "STD": 0.3
+            },
+            "TURNING": {
+                "MEAN": 0.07,
+                "STD": 0.007
+            },
+            "FORCE_WEIGHTS": {
+                "REPULSE": {
+                    "LIKE": 1.5,
+                    "UNLIKE": 40
+                },
+                "ALIGN": 1.5,
+                "COHESION": 1.5
+            },
+            "INNER_RADIUS": 100,
+            "OUTER_RADIUS": 750
+        }
+    }
+}

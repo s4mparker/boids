@@ -4,7 +4,7 @@ import json, pygame
 __all__ = ['config']
 
 # Load the parameters
-config = json.load(open('src/parameters.json'))
+config = json.load(open('parameters.json'))
 
 # Set up pygame
 pygame.init()

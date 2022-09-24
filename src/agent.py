@@ -22,13 +22,13 @@ class Agent(pygame.sprite.Sprite):
         # Add the agent being created to the wider population of agents
         self.agents.add(self)
 
-        # Generate a random point in the environment
+        # Generate a random starting point in the environment
         self.centre = Point2D(
             x=np.random.randint(0, config['ENVIRONMENT']['X']),
             y=np.random.randint(0, config['ENVIRONMENT']['Y']),
         )
 
-        # Set the agent's direction to (0, 1) aka up
+        # Set the agent's initial direction to (0, 1) aka up
         self.direction = Vector2D(x=0, y=1)
 
         # Extract the agent's attributes from the configuration file
@@ -63,10 +63,8 @@ class Agent(pygame.sprite.Sprite):
 
     def update(self):
         
-        # Generate three sets of agents
-        attract_like   = set()
-        repulse_like   = set()
-        repulse_other  = set()
+        # Generate three sets of agents based on their type and distance from the agent in question
+        attract_like, repulse_like, repulse_other = set(), set(), set()
         for agent in self.agents - {self}:
             distance = self.get_distance_between_agents(self, agent)
             if self.type == agent.type and distance <= self.inner_radius:
@@ -77,72 +75,73 @@ class Agent(pygame.sprite.Sprite):
                 repulse_other.add(agent)
 
         # Calculate the repulsion forces
-        repulsion_like  = self.calculate_repulsion(repulse_like).unit * self.force_weights['REPULSE']['LIKE']
-        repulsion_other = self.calculate_repulsion(repulse_other).unit * self.force_weights['REPULSE']['UNLIKE']
+        repulsion = (   
+            self.calculate_repulsion_force(repulse_like).unit * self.force_weights['REPULSE']['LIKE'] + 
+            self.calculate_repulsion_force(repulse_other).unit * self.force_weights['REPULSE']['UNLIKE']
+        )
 
         # Calculate the alignment force
-        alignment = self.calculate_alignment(attract_like).unit * self.force_weights['ALIGN']
+        alignment = self.calculate_alignment_force(attract_like).unit * self.force_weights['ALIGN']
 
         # Calculate the cohesion force
-        cohesion = self.calculate_cohesion(attract_like).unit * self.force_weights['COHESION']
+        cohesion = self.calculate_cohesion_force(attract_like).unit * self.force_weights['COHESION']
 
-        # Calculate the wall repulsion force
-        walls = self.calculate_wall_repulsion().unit
+        # Update the agent based on the calculated forces
+        forces = repulsion + alignment + cohesion
+        if forces:
+            self.direction = (forces.unit * self.turning + self.direction.unit * (1 - self.turning)).unit
+        else:
+            self.direction = Vector2D.rotate_vector(
+                vector=self.direction,
+                angle=np.random.choice([0, 1], p=[0.8, 0.2])*np.random.randint(-5, 5)
+            )
 
-        # Move the agent's position and rotation
-        total_force = repulsion_like + repulsion_other + alignment + cohesion
-        if total_force:
-            self.direction = total_force.unit * self.turning + self.direction.unit * (1 - self.turning)
-            self.direction = self.direction.unit
-        if walls:
-            self.direction = walls.unit * self.turning + self.direction.unit * (1 - self.turning)
-            self.direction = self.direction.unit
+        # Calculate the agent's wall repulsion force
+        wall_force = self.calculate_wall_repulsion_force().unit
 
-        self.direction = self.direction.unit
+        # Update the agent based on the calculated wall force
+        if wall_force:
+            wall_turn = 1 - (1 - self.turning)**2
+            self.direction = (wall_force.unit * wall_turn + self.direction.unit * (1 - wall_turn)).unit
+
+        # Update the agent's position based on its direction
         self.centre = self.centre + self.direction * self.speed
 
-    def calculate_repulsion(self, agents):
-        force = Vector2D(x=0, y=0)
-        for agent in agents:
-            force = force + (self.centre - agent.centre)
-
+    def calculate_repulsion_force(self, agents):
+        force = functools.reduce(
+            lambda a,b: a+(self.centre - b.centre),
+            agents,
+            Vector2D(x=0, y=0)
+        )
         return force
 
-    def calculate_alignment(self, agents):
-        force = Vector2D(x=0, y=0)
-
-        if len(agents) < 1:
-            angle = np.random.choice([0, 1], p=[0.9, 0.1]) * np.random.randint(-40, 41)
-            force = Vector2D.rotate_vector(vector=force, angle=angle)
-        else:
-            for agent in agents : force = force + agent.direction
-
+    def calculate_alignment_force(self, agents):
+        force = functools.reduce(
+            lambda a,b: a+b.direction.unit,
+            agents,
+            Vector2D(x=0, y=0)
+        )
         return force
 
-    def calculate_cohesion(self, agents):
+    def calculate_cohesion_force(self, agents):
         force = Vector2D(x=0, y=0)
         if len(agents) > 0:
             centres = [agent.centre for agent in agents]
             avg_point = Point2D.get_average_point(*centres)
             force = avg_point - self.centre
-
         return force
 
-    def calculate_wall_repulsion(self):
+    def calculate_wall_repulsion_force(self):
         ex, ey = config['ENVIRONMENT']['X'], config['ENVIRONMENT']['Y'] # environment's dimensions
         rx, ry = config['XREPULSION'], config['YREPULSION'] # environment's repulsion
         centre = Point2D(x=int(ex / 2), y=int(ey / 2))
 
-        if self.x < ex * rx:
-            return (centre - self.centre).unit / (abs(self.x) / (ex * rx))**2
-        elif self.x > ex - (ex * rx):
-            return (centre - self.centre).unit / (abs(ex - self.x) / (ex * rx))**2
-        elif self.y < ey * ry:
-            return (centre - self.centre).unit / (abs(self.y) / (ey * ry))**2
-        elif self.y > ey - (ey * ry):
-            return (centre - self.centre).unit / (abs(ey - self.y) / (ey * ry))**2
+        if self.x < ex * rx or self.x > ex - (ex * rx):
+            return centre - self.centre
+        elif self.y < ey * ry or self.y > ey - (ey * ry):
+            return centre - self.centre
         else:
-            return Vector2D(0, 0)
+            return Vector2D(x=0, y=0)
 
     # ---- Properties -------------------------------------------------------
 
@@ -165,8 +164,6 @@ class Agent(pygame.sprite.Sprite):
         rotated = self.image.get_rect(center = original.center)
         rotated.center = (self.centre.x, self.centre.y)
         return rotated
-
-    # ---- Class Methods ----------------------------------------------------
 
     # ---- Static Methods ---------------------------------------------------
 
