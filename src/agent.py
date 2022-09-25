@@ -1,5 +1,7 @@
-import pygame, random, math, functools
+import pygame
 import numpy as np
+
+from functools import reduce
 
 from . import Point2D, Vector2D, config
 
@@ -108,7 +110,7 @@ class Agent(pygame.sprite.Sprite):
         self.centre = self.centre + self.direction * self.speed
 
     def calculate_repulsion_force(self, agents):
-        force = functools.reduce(
+        force = reduce(
             lambda a,b: a+(self.centre - b.centre),
             agents,
             Vector2D(x=0, y=0)
@@ -116,7 +118,7 @@ class Agent(pygame.sprite.Sprite):
         return force
 
     def calculate_alignment_force(self, agents):
-        force = functools.reduce(
+        force = reduce(
             lambda a,b: a+b.direction.unit,
             agents,
             Vector2D(x=0, y=0)

@@ -1,5 +1,4 @@
-import math, random
-from math import sin, cos, atan2
+from math import sin, cos, sqrt, pi, atan2
 
 # Packaging
 __all__ = ['Vector2D', 'Point2D']
@@ -66,7 +65,7 @@ class Vector2D:
         if self.x == 0 and self.y == 0:
             return 0
         else:
-            return math.sqrt(self.x**2 + self.y**2)
+            return sqrt(self.x**2 + self.y**2)
 
     @property
     def unit(self):
@@ -74,17 +73,11 @@ class Vector2D:
         if m == 0 : return Vector2D(0, 0)
         else: return Vector2D(self.x / m, self.y / m)
 
-    # --- Class Methods ------------------------------------------------------
-
-    @classmethod
-    def random(cls, d1, d2):
-        return cls(random.randint(0, d1), random.randint(0, d2))
-
     # --- Static Methods -----------------------------------------------------
 
     @staticmethod
     def rotate_vector(vector, angle):
-        r = -angle * math.pi / 180
+        r = -angle * pi / 180
         return Vector2D(
             cos(r) * vector.x - sin(r) * vector.y,
             sin(r) * vector.x + cos(r) * vector.y
@@ -93,10 +86,10 @@ class Vector2D:
     @staticmethod
     def get_angle_between_vectors(vector1, vector2):
         if type(vector1) is Vector2D and type(vector2) is Vector2D:
-            return math.atan2(
+            return atan2(
                 vector2.x * vector1.y - vector2.y * vector1.x, 
                 vector2.x * vector1.x + vector2.y * vector1.y
-            ) * 180 / math.pi
+            ) * 180 / pi
         else:
             raise TypeError('unexpected operand')
 
@@ -127,12 +120,6 @@ class Point2D:
         else:
             raise TypeError('unexpected operand')
 
-    # --- Class Methods ------------------------------------------------------
-
-    @classmethod
-    def random(cls, d1, d2):
-        return cls(random.randint(0, d1), random.randint(0, d2))
-
     # --- Static Methods -----------------------------------------------------
 
     @staticmethod
@@ -145,9 +132,3 @@ class Point2D:
                 avg_x += point.x
                 avg_y += point.y
             return Point2D(avg_x / len(points), avg_y / len(points))
-
-if __name__ == '__main__':
-    p1 = Point2D(0, 0)
-    p2 = Point2D(1, 1)
-    print(p1 - p2)
-

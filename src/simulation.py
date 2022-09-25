@@ -1,4 +1,6 @@
-import pygame, sys, random
+import pygame
+
+from sys import exit
 
 from . import Agent, config
 
@@ -24,7 +26,7 @@ class Simulation:
 
         while True:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT: sys.exit()
+                if event.type == pygame.QUIT: exit()
 
             environment.fill(config['COLOURS']['BLACK'])
 
