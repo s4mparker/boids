@@ -65,5 +65,4 @@ This project is heavily based on Craig Reynolds' work on boids, of which more in
 
 ## Dependancies
 
-- Python 3
-- pygame
+See included `requirements.txt` file.
